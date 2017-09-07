@@ -4,7 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 import geopandas as gpd
-from networks import redundant_paths
+from algorithms import redundant_paths
 
 from shapely.geometry import LineString
 from shapely.ops import linemerge
@@ -21,7 +21,7 @@ def _set_if_missing(d, **kwargs):
     return kwargs
 
 def _ensure_geometry(G, u, v):
-    edge = G[u][v][0] # get edge with min length ......
+    edge = G[u][v][0] # get edge with min length (need to change!!!)
 
     if 'geometry' in edge:
         return edge['geometry']
@@ -129,6 +129,16 @@ class SpatialNetwork(object):
 
         return [Path(self.net, nodes) for nodes, edges in paths]
     
+    def add_edge_criteria(self, criteria_name, criteria):
+        for point in criteria:
+            '''
+            llledge_id = #get_nearest_edge(self.net, point)
+            edge = self.net[u][v]
+            '''
+            node = self.net.node[n_id]
+            node['pois'] = node.get('pois', [])
+            node['pois'].append(poi)
+
     def add_pois(self, pois):
         for poi in pois:
             point = pois['coordinates']

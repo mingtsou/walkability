@@ -148,11 +148,3 @@ def _get_paths(G, nodes, edges, target, weight, available_dist, cache={}):
 
     return output
 
-
-
-
-
-
-
-
-     
