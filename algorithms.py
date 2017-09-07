@@ -4,15 +4,12 @@ import numpy as np
 from heapq import heappush, heappop
 from itertools import count
 
-
-
-# geography
+# geometry
 import geopandas as gpd
 from shapely.geometry import *
 from shapely.ops import *
 
 INF = float('inf')
-
 
 """
 UTILITY FUNCTIONS
