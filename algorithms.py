@@ -51,7 +51,6 @@ def dijkstra(G, source, target, weight, blacklist=set(), max_dist=INF):
 
     weight = _create_weight_func(G, 'length')
 
-
     while fringe:
         # this is a priority queue, so will always pop minimum distance
         d, _, v = pop(fringe)
@@ -61,6 +60,7 @@ def dijkstra(G, source, target, weight, blacklist=set(), max_dist=INF):
             continue
 
         dist[v] = d
+        #
         # path found! break
         if v == target:
             break
@@ -105,18 +105,19 @@ def redundant_paths(G, source, target, weight, coeff, max_dist):
 
     return paths
 
-
 def _get_paths(G, nodes, edges, target, weight, available_dist, cache={}):
-    """Recursively"""
+    """Recursively get redundant paths."""
 
     G_succ = G.succ if G.is_directed() else G.adj
 
     output = []
     visited = set(nodes)
+    path_info = []
     source = nodes[-1]
     get_weight = _create_weight_func(G, weight)
 
     for neighbor, neighbor_edge in G_succ[source].items():
+
         if neighbor in visited:
             continue
 
@@ -137,23 +138,48 @@ def _get_paths(G, nodes, edges, target, weight, available_dist, cache={}):
         if new_available_dist < cache[sp_key]:
             continue
 
+        path_info.append((neighbor, neighbor_edge, new_available_dist))
+
+
+    for (neighbor, neighbor_edge, new_available_dist) in path_info:
         new_path = nodes + [neighbor]
         new_edges = edges + [neighbor_edge]
 
         if neighbor == target:
             output.append((new_path, new_edges))
         else:
-            output.extend(_get_paths(G, new_path, new_edges, target, weight, 
-                                    new_available_dist, cache))
-
+            output.extend(_get_paths(G, new_path, new_edges, target, 
+                                    weight, new_available_dist, cache))
 
     return output
 
 
+def find_optimal_path(paths, path_label='label', criteria=['length'],
+                        weights=None, minimize=True):
 
+    gdf = Path.paths_to_gdf(paths)
 
+    if type(minimize) in (list, np.array):
+        minimize = np.array(minimize)
+    else:
+        minimize = np.ones(len(criteria)).astype(bool)
 
+    if type(criteria) is not list:
+        criteria = [criteria]
 
+    # if no weights are specified, use equal weighting
+    if not weights:
+        weights = np.ones(len(criteria)) / (1. * len(criteria))
 
+    scores = gdf.groupby(path_label)[criteria].sum().values
+    # min/max normalization
+    scores = (scores - scores.min()) / (scores.max() - scores.min())
+    # reverse if necessary
+    scores[:, ~minimize] = 1. - scores[:, ~minimize]
+    #apply weight to scores                    
+    scores = (scores * weights).sum(axis=1)
 
-     
+    func = 'argmin'
+
+    return paths[getattr(scores, func)()]
+
