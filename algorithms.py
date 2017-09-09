@@ -154,10 +154,8 @@ def _get_paths(G, nodes, edges, target, weight, available_dist, cache={}):
     return output
 
 
-def find_optimal_path(paths, path_label='label', criteria=['length'],
+def find_optimal_score(scores, path_label='label', criteria=['length'],
                         weights=None, minimize=True):
-
-    gdf = Path.paths_to_gdf(paths)
 
     if type(minimize) in (list, np.array):
         minimize = np.array(minimize)
@@ -171,7 +169,6 @@ def find_optimal_path(paths, path_label='label', criteria=['length'],
     if not weights:
         weights = np.ones(len(criteria)) / (1. * len(criteria))
 
-    scores = gdf.groupby(path_label)[criteria].sum().values
     # min/max normalization
     scores = (scores - scores.min()) / (scores.max() - scores.min())
     # reverse if necessary
@@ -179,7 +176,5 @@ def find_optimal_path(paths, path_label='label', criteria=['length'],
     #apply weight to scores                    
     scores = (scores * weights).sum(axis=1)
 
-    func = 'argmin'
-
-    return paths[getattr(scores, func)()]
+    return scores.argmin()
 
