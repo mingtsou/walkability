@@ -4,7 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 import geopandas as gpd
-from algorithms import redundant_paths
+from algorithms import redundant_paths, find_optimal_score
 
 from shapely.geometry import LineString
 from shapely.ops import linemerge
@@ -21,6 +21,11 @@ def _set_if_missing(d, **kwargs):
     return kwargs
 
 def _ensure_geometry(G, u, v):
+    """This function checks whether there is a "geometry" field, and if it 
+    doesn't exist it will create "geometry" that is simply a straight line
+    between the two nodes.
+    """
+
     edge = G[u][v][0] # get edge with min length (need to change!!!)
 
     if 'geometry' in edge:
@@ -106,6 +111,18 @@ class Path(object):
 
         return ax
 
+    @classmethod 
+    def find_optimal_path(cls, paths, path_label='label', criteria=['length'],
+                            weights=None, minimize=True):
+        
+        gdf = Path.paths_to_gdf(paths)
+        scores = gdf.groupby(path_label)[criteria].sum().values
+
+        best = find_optimal_score(scores, path_label=path_label, 
+                         criteria=criteria, weights=weights, minimize=minimize)
+
+        return paths[best]
+
     @classmethod
     def paths_to_gdf(cls, paths):
         gdfs = [p.to_gdf(i) for i, p in enumerate(paths)]
@@ -132,7 +149,8 @@ class SpatialNetwork(object):
     def add_edge_criteria(self, criteria_name, criteria):
         for point in criteria:
             '''
-            llledge_id = #get_nearest_edge(self.net, point)
+            # Not implemented!
+            edge_id = #get_nearest_edge(self.net, point)
             edge = self.net[u][v]
             '''
             node = self.net.node[n_id]
@@ -141,7 +159,7 @@ class SpatialNetwork(object):
 
     def add_pois(self, pois):
         for poi in pois:
-            point = pois['coordinates']
+            point = poi['coordinates']
             n_id = ox.get_nearest_node(self.net, point)
             node = self.net.node[n_id]
             node['pois'] = node.get('pois', [])
@@ -171,13 +189,19 @@ class SpatialNetwork(object):
 
     @classmethod
     def from_osm_bbox(cls, bbox):
-        """Put this in a separate "data" module?"""
+        """Grab OpenStreetMap road data within bounding box.
+        NOTE: Put this in a separate "data" module?
+        """
         G = ox.graph_from_bbox(*bbox, network_type='walk')
 
         return cls(G)
 
 
+# inherit from SpatialNetwork?
 class Catchment(object):
+    """A catchment is essentially an ego network (a network centered around
+    a specific node) limited by a specified network radius.
+    """
 
     def __init__(self, G, center, radius):
         self.radius = radius
