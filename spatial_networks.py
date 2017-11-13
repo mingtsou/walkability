@@ -238,21 +238,3 @@ class Catchment(object):
 
         return fig, ax
 
-
-
-
-
-
-        
-
-
-
-
-
-
-
-
-
-
-
-
